@@ -1,0 +1,64 @@
+---
+title: "Applying Sparse Partial Least Squares Regression (SPLSR) To Explore Associations Between Cortical Thickness and Subvolume Using RANN Data"
+author: "Melissa Nunez"
+date: "10/17/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load RANN Data, echo=FALSE, include = FALSE}
+# RQ: Is there an association between Cortical Thickness and Subcortical Volume? i.e can Cortical thickness predict cortical volume ?
+
+library(caret)
+library(spls)
+library(ggplot2)
+library(gplots)
+library(readxl)
+library(knitr)
+library(kableExtra)
+library(gplots)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+load("/Users/user/Dropbox/Melissa/PLSR/SPLS_RANN.Rdata")
+
+```
+
+
+
+#### Descriptive Statistics: Gender and Education
+```{r report, echo = FALSE, warning=FALSE, message = FALSE}
+Count.Gender <- addmargins(table(fsdat$Gender))
+Count.Gender <- data.frame(c("Female","Male","Total"), c(99,74,173))
+colnames(Count.Gender) <- c("Gender","Count")
+Count.Gender %>%
+  kable() %>%
+    kable_styling(bootstrap_options = "striped")
+
+Edu.Summary <- data.frame(as.matrix(round(summary(fsdat$Edu),2)))
+colnames(Edu.Summary) <- c("Years of Education")
+Edu.Summary %>%
+  kable(bootstrap_options = "striped")
+```
+
+
+#### Age Summary
+```{r statreport, echo = FALSE, echo = FALSE, warning=FALSE, message = FALSE}
+Age.Summary <- data.frame(as.matrix(round(summary(fsdat$Age),2)))
+colnames(Age.Summary) <- c("Baseline Age")
+Age.Summary %>%
+  kable() %>%
+    kable_styling(bootstrap_options = "striped")
+```
+
+RANN data was used to explore associations between cortical thickness and subvolume measures. One hundred boostraped sets were generated, on which partial least squares regression was applied with subvolume as the outcome and cortical thickness as the predictor, using 5-fold cross validation. The optimal number of components was calculated and the beta coefficients were averaged across all 100 datasets. The following heat map summarizes the significant associations.
+
+```{r heatmap, fig.height=8, fig.width=10, fig.align="center", message = FALSE, echo = FALSE, warning=FALSE,}
+heatmap.2(thresh, scale="none",trace='none',col=bluered(200),
+          breaks=c(-100:100)/100*5, margins = c(20,22), dendrogram = "none")
+```

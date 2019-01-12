@@ -1,0 +1,108 @@
+---
+title: "Run SPLS For RANN Data"
+author: "Melissa Nunez"
+date: "10/17/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r load RANN Data, echo=FALSE, include = FALSE}
+# RQ: Is there an association between Cortical Thickness and Subcortical Volume? i.e can Cortical thickness predict cortical volume ?
+
+library(caret)
+#install.packages("spls")
+library(spls)
+library(ggplot2)
+library(readxl)
+library(knitr)
+library(kableExtra)
+library(gplots)
+
+load("/Users/user/Dropbox/Melissa/PLSR/RANN_Data/data_creation_faMNI_sub2_fsaverages_volume_n173_20180817.Rdata")
+load("/Users/user/Dropbox/Melissa/PLSR/SPLS_RANN.Rdata")
+
+```
+
+
+
+```{r Explore spls, echo=FALSE, include = FALSE}
+cv <- cv.spls(fs.thickness.resid, fs.subvol.resid, eta = seq(0.1,0.9,0.1), K = c(1:10) )
+
+mod <- spls(fs.thickness.resid, fs.subvol.resid, eta = cv$eta.opt, K = cv$K.opt )
+print(mod)
+names(mod)
+typeof(mod$betahat)
+```
+
+
+```{r Run spls, echo=FALSE, include = FALSE}
+
+# Bootstrap sample data 100 times
+resamples <- lapply(1:100, function(i) sample(nrow(fs.thickness.resid), replace = T))
+
+
+splsr_opt_coef <- function(x,y,nums)
+  {
+
+j=1
+l <- list()
+
+for (i in 1:100) {
+
+x_boot <- x[nums[[i]],] 
+y_boot <- y[nums[[i]],]
+  
+cv <- cv.spls(x_boot, y_boot, eta = seq(0.1,0.9,0.1), K = c(1:10) )
+
+mod <- spls(x_boot, y_boot, eta = cv$eta.opt, K = cv$K.opt )
+
+coefs <- mod$betahat
+
+l[[i]] <- coefs
+    j <- j + 1
+    
+}
+
+list_opt_coefs <- l
+assign("list_opt_coefs",list_opt_coefs,.GlobalEnv)
+
+}
+
+splsr_opt_coef(fs.thickness.resid, fs.subvol.resid, resamples)
+
+
+
+# Calculate mean and standard deviation of each coefficient
+vec <- unlist(list_opt_coefs, use.names = FALSE)
+DIM <- dim(list_opt_coefs[[1]])
+n <- length(list_opt_coefs)
+
+list.mean <- tapply(vec, rep(1:prod(DIM),times = n), mean)
+attr(list.mean, "dim") <- DIM
+list.mean <- as.data.frame(list.mean)
+
+list.sd <- tapply(vec, rep(1:prod(DIM),times = n), sd)
+attr(list.sd, "dim") <- DIM
+list.sd <- as.data.frame(list.sd)
+
+# Calculate z-score for each coeefficient
+z.score_mat <- list.mean/list.sd
+
+colnames(z.score_mat) <- colnames(fs.subvol.resid)
+rownames(z.score_mat) <- colnames(fs.thickness.resid)
+
+thresh=as.matrix(z.score_mat)
+thresh[abs(thresh)<1.96]<-0
+thresh <- thresh[as.logical(rowSums(thresh != 0)), as.logical(colSums(thresh != 0))]
+
+
+save.image("/Users/user/Dropbox/Melissa/PLSR/SPLS_RANN.Rdata")
+
+```
+
+

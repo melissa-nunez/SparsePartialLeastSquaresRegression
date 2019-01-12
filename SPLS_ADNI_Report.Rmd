@@ -1,0 +1,68 @@
+---
+title: "Applying Sparse Partial Least Squares Regression (SPLSR) To Explore Associations Between Cortical Thickness and Subvolume Using ADNI Data"
+author: "Melissa Nunez"
+date: "10/17/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load RANN Data, echo=FALSE, include = FALSE}
+# RQ: Is there an association between Cortical Thickness and Subcortical Volume? i.e can Cortical thickness predict cortical volume ?
+
+library(caret)
+library(spls)
+library(ggplot2)
+library(gplots)
+library(readxl)
+library(knitr)
+library(kableExtra)
+library(gplots)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+load("/Users/user/Dropbox/Melissa/PLSR/SPLS_ADNI.Rdata")
+
+```
+
+
+
+#### Descriptive Statistics: Gender and Education
+```{r report, echo = FALSE, warning=FALSE, message = FALSE}
+Count.Gender <- addmargins(table(ADNI_Set1$PTGENDER))
+Count.Gender <- data.frame(c("1","2","Total"), c(754,616,1370))
+colnames(Count.Gender) <- c("Gender","Count")
+Count.Gender %>%
+  kable() %>%
+    kable_styling(bootstrap_options = "striped")
+
+Edu.tab <- data.frame(as.matrix(addmargins(table(ADNI_Set1$EDU))))
+Edu.tab$Education <- rownames(Edu.tab)
+Edu.tab <- Edu.tab[,c(2,1)]
+colnames(Edu.tab) <- c("Education Level", "Count")
+rownames(Edu.tab) <- NULL
+Edu.tab %>%
+  kable() %>%
+    kable_styling(bootstrap_options = "striped")
+```
+
+
+#### Age Summary
+```{r statreport, echo = FALSE, echo = FALSE, warning=FALSE, message = FALSE}
+Age.Summary <- data.frame(as.matrix(round(summary(ADNI_Set1$Age_at_baseline),2)))
+colnames(Age.Summary) <- c("Baseline Age")
+Age.Summary %>%
+  kable() %>%
+    kable_styling(bootstrap_options = "striped")
+```
+
+ADNI data was used to explore associations between cortical thickness and subvolume measures. One hundred boostraped sets were generated, on which partial least squares regression was applied with subvolume as the outcome and cortical thickness as the predictor, using 5-fold cross validation. The optimal number of components was calculated and the beta coefficients were averaged across all 100 datasets. The following heat map summarizes the significant associations.
+
+```{r heatmap, fig.height=24, fig.width=24, fig.align="center", message = FALSE, echo = FALSE, warning=FALSE,}
+heatmap.2(thresh, scale="none",trace='none',col=bluered(200),
+          breaks=c(-100:100)/100*7, margins = c(24,24), dendrogram = "none", cexRow=2, cexCol=2, key.par=list(mar=c(12,12,12,12)))
+```
